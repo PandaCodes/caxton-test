@@ -1,0 +1,13 @@
+{
+  "name": "task1",
+  "version": "0.0.0",
+  "description": "Piecewise recoursive destribution sample",
+  "main": "index.js",
+  "repository": "",
+  "author": "Alex Kaminskiy <alex.kaminsky.11@gmail.com",
+  "dependencies": {},
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.3.0"
+  }
+}
