@@ -12,7 +12,6 @@ module.exports = class Distribution {
       case "discrete":
       case "mixed":
         pieces = pieces || events;
-        console.log(this.type, pieces, events)
         if (!pieces || pieces.length === 0)
           throw Error(`No pieces/events set in ${type} distribution`);
         let probabilitySumm = 0;
