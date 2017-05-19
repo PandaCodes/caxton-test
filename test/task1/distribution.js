@@ -1,5 +1,10 @@
-const { expect } = require('chai');
+const chai = require('chai');
+const chaiStats = require('chai-stats');
+const gaussian = require('gaussian');
 const Distribution = require('../../src/task1/distribution');
+
+chai.use(chaiStats);
+const expect = chai.expect;
 
 
 describe("Distribution tests", () => {
@@ -185,6 +190,57 @@ describe("Distribution tests", () => {
       expect(distr.random()).to.be.equal(5);
     });
     
+    
+    describe("Kolmogorov test",() => {
+      it("normal",() => {
+        const m = 0;
+        const sigma2 = 1;
+        const myDistribution = new Distribution({
+          type: "normal", 
+          m, 
+          sigma2,
+        });
+        const gauss = gaussian(m, sigma2);
+        
+        const t = 0.95; 
+        const u = 1.36; // Kolmogorov Quantille
+        const n = 100; //split count
+        const testCount = 1000;
+        let HC0 = 0;
+
+        const lefts = Array(n).fill(0).map((_,i) => i/n);
+        //const middle = Array(n).fill(0).map((_,i) => i/n + i/(2*n));
+        const rights = Array(n).fill(0).map((_,i) => i/n + 1/n);
+        
+        for (let i = 0; i < testCount; i++) {
+
+          //const sumSqr = 0;
+      
+          const x = Array(n).fill(0).map(() => myDistribution.random()).sort((a,b) => a - b);
+          const z = x.map(e => gauss.cdf(e));
+
+          const deltaLeft = z.map((e, i) => Math.abs(e - lefts[i]));
+          const deltaRight = z.map((e, i) => Math.abs(e - rights[i]));
+   
+          //sum_sqr = sum_sqr + (z(j) - y3(j)) * (z(j) - y3(j));
+    
+          const rColm = Math.max(
+            deltaLeft.reduce((e, max) => Math.max(e, max)),
+            deltaRight.reduce((e, max) => Math.max(e, max))
+          );
+          
+          const d = Math.sqrt(n) * rColm;
+    
+          if (d < u)
+              HC0 = HC0 + 1;
+        }
+        
+        const percise = 1;
+        const successPersent = HC0/testCount;
+        expect(successPersent).to.almost.equal(t, percise);
+        
+      });
+    });
     
     
   });
