@@ -1,7 +1,7 @@
 const gaussian = require('gaussian');
 
 module.exports = class Distribution {
-  constructor({type, value, pieces, events, lambda, m, sigma2, a, b, min, max}) {
+  constructor({type, value, pieces, events, lambda, m, sigma2, a, b, min, max }) {
     this.type = type;
     switch (type) {
       case undefined:
@@ -11,11 +11,16 @@ module.exports = class Distribution {
         this.value = value;
         this.type = "single";
         break;
+        
+        
       case "discrete":
       case "mixed":
+        // Check probability summ <= 1
+        // Set equaly probabilities for 'pieces' which doesn't have them
         pieces = pieces || events;
         if (!pieces || pieces.length === 0)
           throw Error(`No pieces/events set in ${type} distribution`);
+          
         let probabilitySumm = 0;
         let unsettedProbabilityCount = 0;
         pieces.map(p => {
@@ -24,8 +29,10 @@ module.exports = class Distribution {
           probabilitySumm += p.probability || 0;
           unsettedProbabilityCount += p.probability ? 0 : 1;
         });
+        
         if (probabilitySumm > 1 || (unsettedProbabilityCount === 0 && probabilitySumm < 0.9999))
           throw Error(`Wrong probability summ in ${type} distribution data`);
+          
         const equalProbability = (1 - probabilitySumm)/unsettedProbabilityCount;
         this.pieces = pieces.map(p => 
           Object.assign(
@@ -34,12 +41,16 @@ module.exports = class Distribution {
           )
         );
         break;
+        
+        
       case "uniform":
         this.a = a || 0;
         this.b = b || 1;
         if (!(this.a <= this.b)) 
           throw new Error(`Invalid interval parameters '${a}', '${b}' for uniform distribution`);
         break;
+        
+        
       case "exponential":
         this.lambda = lambda || 1;
         this.max = max;
@@ -48,6 +59,8 @@ module.exports = class Distribution {
         if (lambda <= 0)
           throw new Error(`Invalid lambda parameter ${lambda} for exponential distribution`);
         break;
+        
+        
       case "normal":
         if (min && max && min >= max)
           throw new Error(`Invalid interval parameters [${min}, ${max}] for normal distribution`);
@@ -58,6 +71,8 @@ module.exports = class Distribution {
         this.min = min;
         this.max = max;
         break;
+        
+        
       default:
         throw new Error("Wrong distribution type. Use one of these: 'discrete', 'uniform', 'exponential', 'normal', 'mixed' or none for the single event.");
     }
@@ -67,22 +82,30 @@ module.exports = class Distribution {
      switch (this.type) {
       case "single":
         return this.value;
+        
+        
       case "mixed":
       case "discrete":
+        // Choose one of parts and return it's sample
         const rndPercent = Math.random();
         let current = 0;
         let done = false;
-        let rnd;
+        let sample;
         this.pieces.map((p) => {
           current += p.probability;
           if (!done && current > rndPercent) {
-            rnd = p.random();
+            sample = p.random();
             done = true;
           }
         });
-        return rnd;
+        return sample;
+        
+        
       case "uniform":
+        // No comment
         return this.a + Math.random()*(this.b-this.a);
+        
+        
       case "exponential":
         // Using inverse function
         // Returns the sample from normalized Exponential distribution cutted by max value
@@ -97,14 +120,15 @@ module.exports = class Distribution {
         /*return this.max ? Math.min(this.max, rndExp) : rndExp;
         */
         
+        
       case "normal":
         // Using cdf and ppf
         // Returns the sample from normalized Gauss between min and max values
         // min is not included, max is included  (couse of Math.random() value range (0, 1] )
         const gauss = gaussian(this.m, this.sigma2);
         
-        const uRndMin = gauss.cdf(this.min);
-        const uRndMax = gauss.cdf(this.max);
+        const uRndMin = this.min ? gauss.cdf(this.min) : 0;
+        const uRndMax = this.max ? gauss.cdf(this.max) : 1;
         
         return gauss.ppf(new Distribution({
           type: "uniform", 

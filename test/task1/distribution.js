@@ -96,7 +96,7 @@ describe("Distribution tests", () => {
             probability: 0.4
           },
           // Discrete distribution
-          // For the events with no probability property thet set equally normalized
+          // For the events with no probability property it set equally normalized probabilities
           {
             probability: 0.1,
             type: "discrete",
@@ -132,7 +132,7 @@ describe("Distribution tests", () => {
             max: 20,
           },
           // Mixed: level 2   (mixed and discrete are the same thing in the core)
-          // As for discrete: For the events with no probability property they set equally normalized
+          // As for discrete: For the events with no probability property it set equally normalized probabilities
           {
             type: "mixed",
             pieces: [ //and so on...
