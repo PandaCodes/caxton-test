@@ -155,7 +155,7 @@ describe("Distribution tests", () => {
     });
     
     it("exponential", () => {
-      const distr = new Distribution({ type: "exponential", max: 3 });
+      const distr = new Distribution({ type: "exponential", max: 1 });
       for (var i = 0; i < 200; i++) {
         expect(distr.random()).to.be.within(0, 3);
       }
@@ -163,7 +163,7 @@ describe("Distribution tests", () => {
     });
     
     it("normal", () => {
-      const distr = new Distribution({ type: "normal", min: 15, max: 18, m: 12 });
+      const distr = new Distribution({ type: "normal", min: 15, max: 18, m: 10 });
       for (var i = 0; i < 200; i++) {
         expect(distr.random()).to.be.within(15, 18);
       }

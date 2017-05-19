@@ -1,3 +1,5 @@
+const gaussian = require('gaussian');
+
 module.exports = class Distribution {
   constructor({type, value, pieces, events, lambda, m, sigma2, a, b, min, max}) {
     this.type = type;
@@ -48,7 +50,7 @@ module.exports = class Distribution {
         break;
       case "normal":
         if (min && max && min >= max)
-          throw new Error(`Invalid interval parameters ${min} ${max} for normal distribution`);
+          throw new Error(`Invalid interval parameters [${min}, ${max}] for normal distribution`);
         if (sigma2 <= 0)
           throw new Error(`Invalid dispersion ${sigma2} for normal distribution`);
         this.m = m || 0;
@@ -82,19 +84,48 @@ module.exports = class Distribution {
       case "uniform":
         return this.a + Math.random()*(this.b-this.a);
       case "exponential":
-        const rndExp = -1/this.lambda * Math.log(Math.random());
+        // Using inverse function
+        // Returns the sample from normalized Exponential distribution cutted by max value
+        // max is not included 
+        const uniformRndMin = this.max ? Math.exp(-this.max * this.lambda) : 0;
+        const uniformRnd = uniformRndMin + (1 - uniformRndMin)*Math.random();
+        const rndExp = -1/this.lambda * Math.log(uniformRnd);
         
-        return this.max ? Math.min(this.max, rndExp) : rndExp;
+        return rndExp; 
+        
+        // Truncate tail:
+        /*return this.max ? Math.min(this.max, rndExp) : rndExp;
+        */
+        
       case "normal":
-        //Box-Muller
-        const phi = 1 - Math.random();
-        const r = 1 - Math.random();
-        const standartRnd = Math.cos(2*Math.PI*phi)*Math.sqrt(-2*Math.log(r));
-        const normRnd = this.m + standartRnd * Math.sqrt(this.sigma2);
+        // Using cdf and ppf
+        // Returns the sample from normalized Gauss between min and max values
+        // min is not included, max is included  (couse of Math.random() value range (0, 1] )
+        const gauss = gaussian(this.m, this.sigma2);
+        
+        const uRndMin = gauss.cdf(this.min);
+        const uRndMax = gauss.cdf(this.max);
+        
+        return gauss.ppf(new Distribution({
+          type: "uniform", 
+          a: uRndMin,
+          b: uRndMax,
+        }).random());
+        
+        
+        // Box-Muller transform (truncate tails)
+        /*
+        const phi = (1 - Math.random()) * 2 * Math.PI;
+        const cosPhi = Math.cos(phi);
+        const r = Math.sqrt(-2*Math.log(1-Math.random()));
+        const standartRnd = cosPhi*r;
+        
+        const normRnd = this.m + standartRnd * sigma;
         
         const maxOrRnd = this.max ? Math.min(this.max , normRnd) : normRnd;
         const maxOrMinOrRnd = this.min ? Math.max(this.min , maxOrRnd) : maxOrRnd;
         return maxOrMinOrRnd;
+        */
         
     }
     
