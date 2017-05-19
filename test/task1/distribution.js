@@ -6,25 +6,29 @@ describe("Distribution tests", () => {
 
   describe("Constructor errors", () => {
     
-    it("single", () => {
+    it("single: no value", () => {
       expect(() => new Distribution()).to.throw(Error);
     });
     
-    it("discrete", () => {
+    it("discrete: no events", () => {
       expect(() => new Distribution({ 
         type: "discrete"
       })).to.throw(Error);
+    });
+    it("discrete: probability > 1", () => {
       expect(() => new Distribution({ 
         type: "discrete",
         events: [{value: 1, probability: 200}]
       })).to.throw(Error);
+     });
+    it("discrete: probability < 0 (summ is ok)", () => {
       expect(() => new Distribution({ 
         type: "discrete",
-        events: [{value: 1, probability: 0.5}, {value: 2, probability: 0.7}]
+        events: [{value: 1, probability: -0.5}, {value: 2, probability: 0.7}, { value:3 }]
       })).to.throw(Error);
     });
     
-    it("mixed", () => {
+    it("mixed: probability summ > 1", () => {
       expect(() => new Distribution({ 
         type: "mixed",
         pieces: [
@@ -45,7 +49,7 @@ describe("Distribution tests", () => {
       
     });
     
-    it("uniform", () => {
+    it("uniform: wrong interval", () => {
       expect(() => new Distribution({ 
         type: "uniform",
         a: 2,
@@ -53,23 +57,27 @@ describe("Distribution tests", () => {
       })).to.throw(Error);
     });
     
-    it("exponential", () => {
+    it("exponential: wrong maximum", () => {
       expect(() => new Distribution({ 
         type: "exponential",
         max: -10,
       })).to.throw(Error);
+    });
+    it("exponential: wrong lambda", () => {
       expect(() => new Distribution({ 
         type: "exponential",
         lambda: -10,
       })).to.throw(Error);
     });
     
-    it("normal", () => {
+    it("normal: wrong interval", () => {
       expect(() => new Distribution({ 
         type: "normal",
         max: -10,
         min: 10,
       })).to.throw(Error);
+    });
+    it("normal: wrong dispersion", () => {
       expect(() => new Distribution({ 
         type: "normal",
         sigma2: -10,
@@ -77,7 +85,7 @@ describe("Distribution tests", () => {
       
     });
     
-    it("other", () => {
+    it("Wrong type", () => {
        expect(() => new Distribution({ 
         type: "blablabla",
       })).to.throw(Error);
@@ -147,14 +155,14 @@ describe("Distribution tests", () => {
   
   describe("Random", () => {
     
-    it("uniform", () => {
+    it("uniform: value in range", () => {
       const distr = new Distribution({ type: "uniform", a: 200, b: 300 });
       for (var i = 0; i < 200; i++) {
         expect(distr.random()).to.be.within(200, 300);
       }
     });
     
-    it("exponential", () => {
+    it("exponential: value in range", () => {
       const distr = new Distribution({ type: "exponential", max: 1 });
       for (var i = 0; i < 200; i++) {
         expect(distr.random()).to.be.within(0, 3);
@@ -162,20 +170,23 @@ describe("Distribution tests", () => {
       
     });
     
-    it("normal", () => {
+    it("normal: value in range", () => {
       const distr = new Distribution({ type: "normal", min: 15, max: 18, m: 10 });
       for (var i = 0; i < 200; i++) {
         expect(distr.random()).to.be.within(15, 18);
       }
     });
     
-    it("discrete", () => {
+    it("discrete: value with P = 1", () => {
       const distr = new Distribution({ 
          type: "discrete", 
          events: [{value: 5, probability: 1}, {value: 10}] 
        });
       expect(distr.random()).to.be.equal(5);
     });
+    
+    
+    
   });
   
 });

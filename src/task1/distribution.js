@@ -1,7 +1,43 @@
 const gaussian = require('gaussian');
 
-module.exports = class Distribution {
-  constructor({type, value, pieces, events, lambda, m, sigma2, a, b, min, max }) {
+/**
+ * class Distribution
+ * @type one of 'discrete', 'uniform', 'exponential', 'normal', 'mixed', 'single' (undefined = single)
+ * @value for 'single' type
+ * @pieces for 'mixed' type; array of objects. 
+ *  Each shoul contain 'probability' property and subdistribution parameters.
+ *  Summ of probabilities must be 1.
+ *  If some probabilities are not given, they set equally in the way that whole summ becomes 1.
+ * @events for 'discrete' type.
+ *  In fact, 'moxed' and 'discrete' types are the same. This parameter is only the alias
+ * @lambda lambda parameter for 'exponential' type.
+ *  Default: 1
+ * @m median parameter for 'normal' type
+ *  Default: 0
+ * @sigma2 dispersion parameter for 'normal' type
+ *  Default: 0
+ * @a, @b  interval parameters for 'uniform' type
+ *  Default: [0, 1]
+ * @max limiting parameter for 'normal' and 'exponential' types
+ * @min limiting parameter for 'normal' type
+ * @truncate boolean parameter for  'normal' and 'exponential' types that defines how to calculate the sample
+ **/
+class Distribution {
+  constructor({
+    type, 
+    value, 
+    pieces, 
+    events, 
+    lambda, 
+    m, 
+    sigma2, 
+    a, 
+    b, 
+    min, 
+    max, 
+    truncate=false 
+  }) {
+    this.truncate = truncate;
     this.type = type;
     switch (type) {
       case undefined:
@@ -107,6 +143,12 @@ module.exports = class Distribution {
         
         
       case "exponential":
+        if (this.truncate) {
+          // Truncate tail:
+          return this.max ? Math.min(this.max, rndExp) : rndExp;
+        
+        }
+        
         // Using inverse function
         // Returns the sample from normalized Exponential distribution cutted by max value
         // max is not included 
@@ -114,14 +156,27 @@ module.exports = class Distribution {
         const uniformRnd = uniformRndMin + (1 - uniformRndMin)*Math.random();
         const rndExp = -1/this.lambda * Math.log(uniformRnd);
         
-        return rndExp; 
-        
-        // Truncate tail:
-        /*return this.max ? Math.min(this.max, rndExp) : rndExp;
-        */
+        return rndExp;
         
         
       case "normal":
+        if (this.truncate) {
+          // Box-Muller transform (truncate tails)
+          
+          const phi = (1 - Math.random()) * 2 * Math.PI;
+          const cosPhi = Math.cos(phi);
+          const r = Math.sqrt(-2*Math.log(1-Math.random()));
+          const standartRnd = cosPhi*r;
+          
+          const normRnd = this.m + standartRnd * Math.sqrt(this.sigma2);
+          
+          const maxOrRnd = this.max ? Math.min(this.max , normRnd) : normRnd;
+          const maxOrMinOrRnd = this.min ? Math.max(this.min , maxOrRnd) : maxOrRnd;
+          return maxOrMinOrRnd;
+        
+        }
+        
+        
         // Using cdf and ppf
         // Returns the sample from normalized Gauss between min and max values
         // min is not included, max is included  (couse of Math.random() value range (0, 1] )
@@ -136,22 +191,9 @@ module.exports = class Distribution {
           b: uRndMax,
         }).random());
         
-        
-        // Box-Muller transform (truncate tails)
-        /*
-        const phi = (1 - Math.random()) * 2 * Math.PI;
-        const cosPhi = Math.cos(phi);
-        const r = Math.sqrt(-2*Math.log(1-Math.random()));
-        const standartRnd = cosPhi*r;
-        
-        const normRnd = this.m + standartRnd * sigma;
-        
-        const maxOrRnd = this.max ? Math.min(this.max , normRnd) : normRnd;
-        const maxOrMinOrRnd = this.min ? Math.max(this.min , maxOrRnd) : maxOrRnd;
-        return maxOrMinOrRnd;
-        */
-        
     }
     
   }
 }
+
+module.exports = Distribution;
